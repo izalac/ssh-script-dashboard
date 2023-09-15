@@ -16,7 +16,7 @@ SSH Script Dashboard is built using the following technology:
 * Tailwind CSS
 * HTMX
 
-To download SSH Script Dashboard, you need git and Python 3 on your system. From your terminal or command prompt, clone this repository and enter it. If it's your first time, you'll need to create a virtual environment, which you need to activate, and install the requirements in package.
+To download SSH Script Dashboard, you need Python 3 on your system. From your terminal or command prompt, clone this repository and enter it. If it's your first time, you'll need to create a virtual environment, which you need to activate, and install the requirements in package. As an alternative to git clone, [downloadable releases](https://github.com/izalac/ssh-script-dashboard/releases) are also provided.
 
 ### GNU/Linux instructions (should also work on Mac and most OS-es)
 
