@@ -1,0 +1,4 @@
+{
+    "system-id": "uname -a",
+    "system-usage-stats": "top -b -n 1"
+}
