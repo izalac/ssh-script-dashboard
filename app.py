@@ -22,12 +22,11 @@ from flask import Flask, render_template, session
 import os
 import json
 import envexecute as ex
-import logging
 
 
 app = Flask(__name__)
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
-version='V1.0.0'
+version='V1.0.1'
+
 
 if os.environ['AUTH_MODEL'] == 'oidc':
     from flask_pyoidc.provider_configuration import ClientMetadata
@@ -50,7 +49,7 @@ try:
         commands = json.load(command_file)
 except Exception as e:
     message=(f'Critical error in loading commands.json: {e}')
-    logging.critical(message)
+    app.logger.critical(message)
     raise Exception(message)
 
 
@@ -72,12 +71,12 @@ def run_script(script):
         if os.environ['AUTH_MODEL'] == 'oidc':
             user_session = UserSession(session)
             name = user_session.userinfo['name']
-        logging.info(f'{script} triggered by {name}')
+        app.logger.info(f'{script} triggered by {name}')
         result = ex.default_execute(commands[script])
         return result
     except Exception as e:
         message=(f'Execution error: {e}')
-        logging.error(message)
+        app.logger.error(message)
         return (f'{message} <br />')
 
 

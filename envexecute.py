@@ -23,8 +23,6 @@ import os
 import json
 import logging
 
-logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
-
 
 # Tries to read EXECUTE_MODEL from environment, if it doesn't succeed, it
 # populates the environment with values from config/env.json
@@ -39,8 +37,21 @@ except KeyError:
                 os.environ[env_item] = env_data[env_item]
     except Exception as e:
         message=(f'Environment load error: {e}')
-        logging.critical(message)
         raise Exception(message)
+
+
+# Sets up logging
+try:
+    if os.environ['LOG_FILE']:
+        logging.basicConfig(filename=os.environ['LOG_FILE'],
+                            filemode='a',
+                            format='%(asctime)s - %(message)s',
+                            level=logging.INFO)
+        logging.info(f'App startup. Logging to '
+                     f'{os.environ["LOG_FILE"]} started.')
+except KeyError:
+    logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+
 
 # remote ssh server setup, if the appropriate EXECUTE_MODEL is set
 if (os.environ['EXECUTE_MODEL'] == 'remote'

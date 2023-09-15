@@ -39,4 +39,8 @@ These variables are required if your **AUTH_MODEL** is *oidc*.
 * **OIDC_CLIENT_SECRET** - secret value of your OIDC client; client authentication/confidential access must be set up, this is the only OIDC client configuration that will work
 
 
+## Logging
+
+* **LOG_FILE** - enter the filename for log file. This parameter is optional - if it's not present, all logging will be done in console output instead of saved into a file.
+
 [Back to Readme](../README.md)
