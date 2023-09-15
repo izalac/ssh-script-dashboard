@@ -46,7 +46,7 @@ SSH Script Dashboard requires some configuration to run properly. You'll find th
 
 * [Environment setup](docs/environment.md)
 * [Security setup](docs/security.md)
-* [Command setup](commands.md)
+* [Command setup](docs/commands.md)
 
 ## Legal stuff
 
