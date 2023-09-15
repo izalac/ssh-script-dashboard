@@ -26,6 +26,14 @@ If your OIDC solution is integrated with your corporate login, using a shared re
 
 And remember the rule of two - if your OIDC system is on http, this app should be as well. If it's on https, this app should be as well. Certificate trust must be established, or else there might be issues with authentication. This is typically not an issue if you're using commercial TLS certificates (or letsencrypt), but there could be issues with using internal CA. Included Dockerfile provides a sample CA bundle injection (commented out by default).
 
+#### Important
+
+To finish the OIDC setup, apart from [environment variables](environment.md) you need to edit app.py to add:
+
+    @auth.oidc_auth('oidc-provider') 
+
+under every @app.route line, to make sure OIDC authentication is required on that route. These instructions are repeated in the app.py source code.
+
 ## Securing deployment and scalability
 
 Ideally, if accessed by other people, this app should be exposed through a remote proxy, load balancer, kubernetes ingress or a similar technology. TLS should be implemented either on those, or on the app itself for complete end-to-end encryption.

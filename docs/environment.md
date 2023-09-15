@@ -38,6 +38,8 @@ These variables are required if your **AUTH_MODEL** is *oidc*.
 * **OIDC_CLIENT_ID** - the id of your OIDC client
 * **OIDC_CLIENT_SECRET** - secret value of your OIDC client; client authentication/confidential access must be set up, this is the only OIDC client configuration that will work
 
+More steps are needed for OIDC setup - see the relevant section in the [security document](security.md).
+
 
 ## Logging
 
