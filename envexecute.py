@@ -51,6 +51,7 @@ try:
                      f'{os.environ["LOG_FILE"]} started.')
 except KeyError:
     logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
+    logging.info(f'App startup. Logging to terminal only.')
 
 
 # remote ssh server setup, if the appropriate EXECUTE_MODEL is set
@@ -61,6 +62,7 @@ if (os.environ['EXECUTE_MODEL'] == 'remote'
                                    user=os.environ['REMOTEUSER'],
                                    connect_kwargs={"key_filename":
                                                    os.environ['REMOTECERT']})
+        logging.debug('Remote server connection step successful.')
     except Exception as e:
         message=(f"Remote connection to "
                 f"{os.environ['REMOTESERVER']} failed: {e}")
@@ -74,6 +76,8 @@ def local_execute(script):
     try:
         execute = os.popen(script)
         output = execute.read()
+        logging.debug(output)
+        # reformatting newlines to html <br /> tag for html output
         output = output.replace('\n', '<br />')
         return output
     except Exception as e:
@@ -101,9 +105,9 @@ def remote_execute(script):
     ''' Function that executes the argument on a remote system, and returns
       its output in html form '''
     try:
-        # Remote execution
         execute = server.run(script)
         output = execute.stdout
+        logging.debug(output)
         # reformatting newlines to html <br /> tag for html output
         output = output.replace('\n', '<br />')
         return output
@@ -131,6 +135,7 @@ def remote_execute_background(script):
 def default_execute(script):
     ''' Function that will call the appropriate function according to the
       EXECUTE_MODEL env variable '''
+    logging.debug(f'Running {script} in {os.environ["EXECUTE_MODEL"]} mode...')
     if os.environ['EXECUTE_MODEL'] == 'local':
         return local_execute(script)
     elif os.environ['EXECUTE_MODEL'] == 'local-background':
