@@ -48,6 +48,13 @@ To download SSH Script Dashboard, you need Python 3 on your system. From your te
     pip3 install -r requirements.txt
     py -m flask run
 
+### Docker instructions
+
+    git clone https://github.com/izalac/ssh-script-dashboard
+    cd ssh-script-dashboard
+    docker build -t ssh-script-dashboard .
+    docker run -d -p 5000:5000 ssh-script-dashboard
+
 When this is done, you should see the application running in your browser on http://localhost:5000/
 
 At this point, you probably want to quit running and configure it further...
