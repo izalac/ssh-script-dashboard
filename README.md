@@ -6,6 +6,16 @@ SSH Script Dashboard is intended as a solution to those issues. It allows you to
 
 Some configuration is required before you run it - either via environment variables, or via the included env.json config file. You can list your custom scripts in the provided commands.json config file. Dockerfile is also provided for container deployments, with commented-out section that allows you to inject your own CA certificate, if required.
 
+## Screenshots
+
+Light mode, custom HTTP script output, desktop:
+![Light mode, HTTP script output, desktop](https://raw.githubusercontent.com/izalac/misc-files/main/ssh-dashboard-html-light-desktop.png "Light mode, HTTP script output, desktop")
+
+Dark mode, top output, mobile:
+![Dark mode, top output, mobile](https://raw.githubusercontent.com/izalac/misc-files/main/ssh-dashboard-top-dark-mobile.png "Dark mode, top output, mobile")
+
+Visuals can be further customized in [index.html](templates/index.html)
+
 ## Requirements and initial setup
 
 SSH Script Dashboard is built using the following technology:
