@@ -9,9 +9,11 @@ Some configuration is required before you run it - either via environment variab
 ## Screenshots
 
 Light mode, custom HTTP script output, desktop:
+
 ![Light mode, HTTP script output, desktop](https://raw.githubusercontent.com/izalac/misc-files/main/ssh-dashboard-html-light-desktop.png "Light mode, HTTP script output, desktop")
 
 Dark mode, top output, mobile:
+
 ![Dark mode, top output, mobile](https://raw.githubusercontent.com/izalac/misc-files/main/ssh-dashboard-top-dark-mobile.png "Dark mode, top output, mobile")
 
 Visuals can be further customized in [index.html](templates/index.html)
