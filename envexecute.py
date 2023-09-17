@@ -144,3 +144,8 @@ def default_execute(script):
         return remote_execute(script)
     elif os.environ['EXECUTE_MODEL'] == 'remote-background':
         return remote_execute_background(script)
+    else:
+        # Fallback mode
+        logging.warning(f'Unknown EXECUTE_MODEL {os.environ["EXECUTE_MODEL"]},'
+                      f' attempting to run {script} in local mode...')
+        return local_execute(script)
