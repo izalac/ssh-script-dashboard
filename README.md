@@ -52,6 +52,9 @@ To download SSH Script Dashboard, you need Python 3 on your system. From your te
 
     git clone https://github.com/izalac/ssh-script-dashboard
     cd ssh-script-dashboard
+
+Note: you probably want to do your configuration before you proceed with building and running the docker container.
+
     docker build -t ssh-script-dashboard .
     docker run -d -p 5000:5000 ssh-script-dashboard
 
