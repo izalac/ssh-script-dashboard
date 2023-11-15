@@ -25,7 +25,7 @@ import envexecute as ex
 
 
 app = Flask(__name__)
-version='V1.0.5'
+version='V1.0.6'
 
 
 if os.environ['AUTH_MODEL'] == 'oidc':
