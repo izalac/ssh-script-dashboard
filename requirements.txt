@@ -14,7 +14,7 @@ fabric==3.2.2
 Flask==2.3.3
 Flask-pyoidc==3.14.2
 future==0.18.3
-idna==3.4
+idna==3.7
 importlib-resources==6.0.1
 invoke==2.2.0
 itsdangerous==2.1.2
