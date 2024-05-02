@@ -1,7 +1,7 @@
 '''
     SSH Script Dashboard
     An interface for executing scripts locally, or remotely over SSH
-    Copyright (C) 2023 Ivan Žalac
+    Copyright (C) 2023-2024 Ivan Žalac
     https://github.com/izalac/ssh-script-dashboard
 
     This program is free software: you can redistribute it and/or modify
