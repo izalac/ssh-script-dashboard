@@ -17,7 +17,7 @@ stages:
   jobs:
   - job: Build
     displayName: Build
-    # Setup for local agent as a build pool
+    # Setup for local agent as a build pool, modify if needed
     pool: mycomputeragent
     steps:
     - task: Docker@2
