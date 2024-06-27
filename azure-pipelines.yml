@@ -5,6 +5,9 @@
 trigger:
 - main
 
+# Setup for local agent as a build pool
+pool: mycomputeragent
+
 resources:
 - repo: self
 
