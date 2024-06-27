@@ -5,9 +5,6 @@
 trigger:
 - main
 
-# Setup for local agent as a build pool
-pool: mycomputeragent
-
 resources:
 - repo: self
 
@@ -20,8 +17,8 @@ stages:
   jobs:
   - job: Build
     displayName: Build
-    pool:
-      vmImage: ubuntu-latest
+    # Setup for local agent as a build pool
+    pool: mycomputeragent
     steps:
     - task: Docker@2
       displayName: Build an image
