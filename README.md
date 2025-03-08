@@ -72,7 +72,7 @@ SSH Script Dashboard requires some configuration to run properly. You'll find th
 
 ## Legal stuff
 
-Copyright © 2023 Ivan Žalac
+Copyright © 2023-2025 Ivan Žalac
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
