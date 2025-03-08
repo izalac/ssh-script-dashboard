@@ -1,8 +1,9 @@
-FROM python:3.11.9-alpine3.19
+FROM python:3.13.2-alpine3.21
 
 # System update
 RUN apk update
 RUN apk upgrade
+RUN apk add build-base
 RUN python3 -m pip install --upgrade pip
 
 # Install requirements
