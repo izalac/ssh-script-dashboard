@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssh-script-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ssh-script-dashboard
+  template:
+    metadata:
+      labels:
+        app: ssh-script-dashboard
+    spec:
+      containers:
+      - name: ssh-script-dashboard
+        image: ssh-script-dashboard:latest
+        imagePullPolicy: Never  # for using local images
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssh-script-dashboard-service
+spec:
+  selector:
+    app: ssh-script-dashboard
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
