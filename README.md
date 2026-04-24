@@ -4,6 +4,18 @@ If you work as a GNU/Linux expert, sysadmin or devops in some capacity, you migh
 
 SSH Script Dashboard is intended as a solution to those issues. It allows you to set up a script dashboard for yourself, and it can be deployed as a self-service portal to allow users to trigger scripts themselves. It can run scripts remotely via SSH, or locally on any OS it runs on, and supports both plaintext and HTML output of scripts. It supports OpenID Connect (OIDC) for secure single sign-on and identity and access management.
 
+## Screenshots
+
+Light mode, custom HTTP script output, desktop:
+
+![Light mode, HTTP script output, desktop](https://raw.githubusercontent.com/izalac/misc-files/main/ssh-dashboard-html-light-desktop.png "Light mode, HTTP script output, desktop")
+
+Dark mode, top output, mobile:
+
+![Dark mode, top output, mobile](https://raw.githubusercontent.com/izalac/misc-files/main/ssh-dashboard-top-dark-mobile.png "Dark mode, top output, mobile")
+
+Visuals can be further customized in [index.html](templates/index.html)
+
 ## Key Features in V1.1.0
 
 *   **Secure Execution:** Migrated from legacy `os.popen` to the `subprocess` module with improved error handling and security.
@@ -78,7 +90,7 @@ python -m unittest testunit.py
 
 ## Legal stuff
 
-Copyright © 2023-2025 Ivan Žalac
+Copyright © 2023-2026 Ivan Žalac
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
