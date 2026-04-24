@@ -18,68 +18,95 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 '''
 
-from flask import Flask, render_template, session
+from flask import Flask, render_template, session, current_app
 import os
 import json
 import envexecute as ex
 
+VERSION = 'V1.1.0'
 
-app = Flask(__name__)
-version='V1.0.7'
+def create_app(config_overrides=None):
+    app = Flask(__name__)
+    app.config['VERSION'] = VERSION
+    
+    # Default COMMANDS
+    app.config['COMMANDS'] = {}
+    commands_path = os.path.join('config', 'commands.json')
+    try:
+        if os.path.exists(commands_path):
+            with open(commands_path) as command_file:
+                app.config['COMMANDS'] = json.load(command_file)
+        else:
+            app.logger.warning("commands.json not found, initializing with empty commands.")
+    except Exception as e:
+        app.logger.critical(f'Critical error in loading commands.json: {e}')
+        raise
 
+    if config_overrides:
+        app.config.update(config_overrides)
 
-if os.environ['AUTH_MODEL'] == 'oidc':
-    from flask_pyoidc.provider_configuration import ClientMetadata
-    from flask_pyoidc.provider_configuration import ProviderConfiguration
-    from flask_pyoidc.user_session import UserSession
+    # OIDC Setup
+    auth_model = os.environ.get('AUTH_MODEL', 'none')
+    if auth_model == 'oidc':
+        setup_oidc(app)
+
+    register_routes(app)
+    return app
+
+def setup_oidc(app):
+    from flask_pyoidc.provider_configuration import ClientMetadata, ProviderConfiguration
     from flask_pyoidc import OIDCAuthentication
-    app.config.update(OIDC_REDIRECT_URI=os.environ['LOCAL_OIDC_REDIRECT_URI'],
-                      SECRET_KEY=os.environ['LOCAL_SECRET_KEY'])
-    cli_meta = ClientMetadata(client_id=os.environ['OIDC_CLIENT_ID'],
-                              client_secret=os.environ['OIDC_CLIENT_SECRET'])
-    provider_config = ProviderConfiguration(issuer=os.environ['OIDC_ISSUER'],
-                                            client_metadata=cli_meta)
+    
+    app.config.update(
+        OIDC_REDIRECT_URI=os.environ.get('LOCAL_OIDC_REDIRECT_URI'),
+        SECRET_KEY=os.environ.get('LOCAL_SECRET_KEY')
+    )
+    
+    cli_meta = ClientMetadata(
+        client_id=os.environ.get('OIDC_CLIENT_ID'),
+        client_secret=os.environ.get('OIDC_CLIENT_SECRET')
+    )
+    provider_config = ProviderConfiguration(
+        issuer=os.environ.get('OIDC_ISSUER'),
+        client_metadata=cli_meta
+    )
     auth = OIDCAuthentication({'oidc-provider': provider_config})
     auth.init_app(app)
+    app.config['AUTH'] = auth
 
+def register_routes(app):
+    @app.route("/")
+    def index():
+        auth = app.config.get('AUTH')
+        # If OIDC is enabled, we might want to protect this route
+        # For now, keeping it consistent with the original logic but cleaner
+        return render_template('index.html', 
+                             commands=app.config['COMMANDS'], 
+                             version=app.config['VERSION'])
 
-# Loads the configured commands
-try:
-    with open("config/commands.json") as command_file:
-        commands = json.load(command_file)
-except Exception as e:
-    message=(f'Critical error in loading commands.json: {e}')
-    app.logger.critical(message)
-    raise Exception(message)
+    @app.route("/scripts/<string:script>")
+    def run_script(script):
+        try:
+            name = 'user'
+            if os.environ.get('AUTH_MODEL') == 'oidc':
+                from flask_pyoidc.user_session import UserSession
+                user_session = UserSession(session)
+                name = user_session.userinfo.get('name', 'user')
+            
+            app.logger.info(f'{script} triggered by {name}')
+            
+            commands = app.config['COMMANDS']
+            if script not in commands:
+                return f"Error: Script '{script}' not found.<br />", 404
+                
+            result = ex.default_execute(commands[script])
+            return result
+        except Exception as e:
+            message = f'Execution error: {e}'
+            app.logger.error(message)
+            return f'{message} <br />', 500
 
+app = create_app()
 
-# Main landing page
-# If using OIDC, add the following line under the @app.route line:
-# @auth.oidc_auth('oidc-provider')
-@app.route("/")
-def index():
-    return render_template('index.html', commands=commands, version=version)
-
-
-# Script running endpoint
-# If using OIDC, add the following line under the @app.route line:
-# @auth.oidc_auth('oidc-provider')
-@app.route("/scripts/<string:script>")
-def run_script(script):
-    try:
-        name='user'
-        if os.environ['AUTH_MODEL'] == 'oidc':
-            user_session = UserSession(session)
-            name = user_session.userinfo['name']
-        app.logger.info(f'{script} triggered by {name}')
-        result = ex.default_execute(commands[script])
-        return result
-    except Exception as e:
-        message=(f'Execution error: {e}')
-        app.logger.error(message)
-        return (f'{message} <br />')
-
-
-# Runs the app
 if __name__ == "__main__":
     app.run()

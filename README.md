@@ -1,74 +1,80 @@
-# SSH Script Dashboard
+# SSH Script Dashboard (V1.1.0)
 
 If you work as a GNU/Linux expert, sysadmin or devops in some capacity, you might be writing some scripts at your workplace to automate some of the tasks. Many of them can be fully automated, such as with crontab or systemd timers, but there are a few which you might need to run manually when a user requests it.
 
-SSH Script Dashboard is intended as a solution to those issues. It allows you to set up a script dashboard for yourself, and it can be deployed as a self-service portal to allow users to trigger scripts themselves. It can run scripts remotely via SSH, or locally on any OS it runs on, and supports both plaintext and HTML output of scripts. It supports OpenID Connect (OIDC) for secure single sign-on and identity and access management. By default, it comes with a lightweight, flexible design, with dark and light mode themes, and can be easily customized. It works on screens of any size, including mobile.
+SSH Script Dashboard is intended as a solution to those issues. It allows you to set up a script dashboard for yourself, and it can be deployed as a self-service portal to allow users to trigger scripts themselves. It can run scripts remotely via SSH, or locally on any OS it runs on, and supports both plaintext and HTML output of scripts. It supports OpenID Connect (OIDC) for secure single sign-on and identity and access management.
 
-Some configuration is required before you run it - either via environment variables, or via the included env.json config file. You can list your custom scripts in the provided commands.json config file. Dockerfile is also provided for container deployments, with commented-out section that allows you to inject your own CA certificate, if required.
+## Key Features in V1.1.0
 
-## Screenshots
+*   **Secure Execution:** Migrated from legacy `os.popen` to the `subprocess` module with improved error handling and security.
+*   **Application Factory:** Refactored Flask application for better modularity and testability.
+*   **Enhanced UI:** Added HTMX loading indicators providing real-time "Running..." feedback for long-running scripts.
+*   **Comprehensive Testing:** New automated test suite using `unittest` and `flask.test_client`.
+*   **Modernized Dependencies:** Updated to Flask 3.1+ and other modern libraries for improved security and performance.
+*   **Mobile Ready:** Responsive design with dark and light mode themes, optimized for screens of any size.
 
-Light mode, custom HTTP script output, desktop:
-
-![Light mode, HTTP script output, desktop](https://raw.githubusercontent.com/izalac/misc-files/main/ssh-dashboard-html-light-desktop.png "Light mode, HTTP script output, desktop")
-
-Dark mode, top output, mobile:
-
-![Dark mode, top output, mobile](https://raw.githubusercontent.com/izalac/misc-files/main/ssh-dashboard-top-dark-mobile.png "Dark mode, top output, mobile")
-
-Visuals can be further customized in [index.html](templates/index.html)
-
-## Requirements and initial setup
+## Requirements and Initial Setup
 
 SSH Script Dashboard is built using the following technology:
 
-* Python 3.11 (older versions might work too)
-* Flask framework
-* Jinja2 templates
-* Tailwind CSS
-* HTMX
+*   Python 3.11+
+*   Flask 3.1+
+*   Fabric (for remote execution)
+*   HTMX & Tailwind CSS
 
-To download SSH Script Dashboard, you need Python 3 on your system. From your terminal or command prompt, clone this repository and enter it. If it's your first time, you'll need to create a virtual environment, which you need to activate, and install the requirements in package. As an alternative to git clone, [downloadable releases](https://github.com/izalac/ssh-script-dashboard/releases) are also provided.
+### Installation
 
-### GNU/Linux instructions (should also work on Mac and most OS-es)
-
+1.  **Clone the repository:**
+    ```bash
     git clone https://github.com/izalac/ssh-script-dashboard
     cd ssh-script-dashboard
+    ```
+
+2.  **Create and activate a virtual environment:**
+    ```bash
+    # GNU/Linux or Mac
     python3 -m venv venv
     source venv/bin/activate
-    pip3 install -r requirements.txt
-    python3 -m flask run
 
-### Windows instructions
+    # Windows
+    python -m venv venv
+    .\venv\Scripts\activate
+    ```
 
-    git clone https://github.com/izalac/ssh-script-dashboard
-    cd ssh-script-dashboard
-    py -m venv venv
-    venv\Scripts\activate.bat
-    pip3 install -r requirements.txt
-    py -m flask run
+3.  **Install dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-### Docker instructions
+4.  **Run the application:**
+    ```bash
+    python app.py
+    ```
 
-    git clone https://github.com/izalac/ssh-script-dashboard
-    cd ssh-script-dashboard
+### Docker Deployment
 
-Note: you probably want to do your configuration before you proceed with building and running the docker container.
+A `.dockerignore` file is provided to keep the build context small. The Docker image automatically runs unit tests during the build phase to ensure stability.
 
-    docker build -t ssh-script-dashboard .
-    docker run -d -p 5000:5000 ssh-script-dashboard
-
-When this is done, you should see the application running in your browser on http://localhost:5000/
-
-At this point, you probably want to quit running and configure it further...
+```bash
+docker build -t ssh-script-dashboard .
+docker run -d -p 5000:5000 ssh-script-dashboard
+```
 
 ## Configuration
 
-SSH Script Dashboard requires some configuration to run properly. You'll find the documents below:
+SSH Script Dashboard requires some configuration to run properly. Environment variables take precedence over the `config/env.json` file.
 
-* [Environment setup](docs/environment.md)
-* [Security setup](docs/security.md)
-* [Command setup](docs/commands.md)
+*   **Environment Variables:** [Environment setup](docs/environment.md)
+*   **Security & SSH:** [Security setup](docs/security.md)
+*   **Defining Scripts:** [Command setup](docs/commands.md)
+
+## Testing
+
+The project includes a comprehensive test suite. To run tests locally:
+
+```bash
+python -m unittest testunit.py
+```
 
 ## Legal stuff
 
@@ -78,8 +84,3 @@ This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-[GNU General Public License](LICENSE) for more details.

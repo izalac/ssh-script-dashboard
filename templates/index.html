@@ -19,7 +19,8 @@
             <p class="pt-2 pb-4 px-4 text-2xl text-sky-700 dark:text-sky-300 bg-slate-100 dark:bg-slate-700 hover:outline rounded-3xl">
                 <button hx-get="/scripts/{{name}}"
                 hx-trigger="click"
-                hx-target="#output"
+                hx-target="#output-content"
+                hx-indicator="#indicator"
                 hx-swap="innerHTML">
                 {{name}}
                 </button>
@@ -27,7 +28,8 @@
             {% endfor %}
         </div>
         <div id="output" class="font-mono text-slate-900 dark:text-amber-200 p-8 flex-auto hover:outline-dotted rounded-3xl">
-            Output is currently empty
+            <div id="indicator" class="htmx-indicator italic text-sky-500 mb-4">Running script...</div>
+            <div id="output-content">Output is currently empty</div>
         </div>
     </div>
     <footer>

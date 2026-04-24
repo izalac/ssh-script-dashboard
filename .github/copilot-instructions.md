@@ -1,14 +1,15 @@
-# Copilot Instructions for SSH Script Dashboard
+# Copilot Instructions for SSH Script Dashboard (V1.1.0)
 
 ## Project Overview
 
-**SSH Script Dashboard** is a Flask-based web application that provides a self-service portal for executing scripts—either locally or remotely over SSH. It supports both plaintext and HTML script outputs, OpenID Connect (OIDC) authentication, and responsive UI with dark/light modes.
+**SSH Script Dashboard** is a Flask-based web application that provides a self-service portal for executing scripts—either locally or remotely over SSH. It supports both plaintext and HTML script outputs, OpenID Connect (OIDC) authentication, and a responsive UI with dark/light modes.
 
 **Key technologies:**
-- Python 3.11 + Flask 2.3
+- Python 3.11+ + Flask 3.1+
 - Fabric for SSH/remote execution
+- Subprocess & shlex for secure local execution and background tasks
 - Jinja2 templates + Tailwind CSS for UI
-- HTMX for interactive frontend
+- HTMX for interactive frontend with loading indicators
 - Flask-pyoidc for OIDC authentication (optional)
 
 ## Build, Test & Run Commands
@@ -16,36 +17,29 @@
 ### Development Setup
 ```bash
 # Windows
-py -m venv venv
-venv\Scripts\activate.bat
+python -m venv venv
+.\venv\Scripts\activate
 pip install -r requirements.txt
 
 # Linux/Mac
 python3 -m venv venv
 source venv/bin/activate
-pip3 install -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ### Run Application
 ```bash
-# Development server (port 5000)
-python -m flask run
+# Direct execution (recommended)
+python app.py
 
-# With debug mode
-$env:FLASK_ENV = 'development'; python -m flask run  # Windows
-FLASK_ENV=development python -m flask run  # Linux/Mac
+# Via Flask CLI
+flask run
 ```
 
 ### Running Tests
 ```bash
-# Run all unit tests
-python -m unittest discover -s . -p "test*.py"
-
-# Run single test file
+# Run the main test suite
 python -m unittest testunit.py
-
-# Run specific test case
-python -m unittest testunit.DemoTest.test_demo
 ```
 
 ### Docker
@@ -57,100 +51,67 @@ docker run -d -p 5000:5000 ssh-script-dashboard
 ## High-Level Architecture
 
 ### Core Files
-- **app.py** - Flask application entry point; defines two routes:
-  - `/` - Landing page showing available commands
-  - `/scripts/<script>` - Executes a command and returns output
-  - Routes can be decorated with `@auth.oidc_auth('oidc-provider')` for OIDC protection
+- **app.py** - Flask application using the **Application Factory pattern** (`create_app`):
+  - Configuration is managed via `app.config`.
+  - Commands are loaded into `app.config['COMMANDS']`.
+  - Supports configuration overrides for testing.
+  - Routes:
+    - `/` - Dashboard landing page.
+    - `/scripts/<script>` - Executes script, returns HTML-formatted output.
 
-- **envexecute.py** - Script execution engine; key functions:
-  - `default_execute(script)` - Router function that delegates to appropriate execution method
-  - `local_execute()` / `remote_execute()` - Runs scripts and captures output
-  - Background variants using tmux for long-running tasks
-  - Handles environment setup (loads from env.json if env vars not set)
+- **envexecute.py** - Execution engine using `subprocess`:
+  - `local_execute(script)`: Uses `subprocess.run` with `capture_output`.
+  - `local_execute_background(script)`: Uses `shlex.quote` and `tmux` for backgrounding.
+  - `get_server_connection()`: Lazily initializes the Fabric connection.
+  - Handles environment loading from `config/env.json`.
 
-- **config/commands.json** - JSON file defining available commands as a dictionary mapping script IDs to shell commands
+- **config/commands.json** - Dictionary mapping script IDs to shell commands.
 
-- **config/env.json** - Local environment configuration (fallback if env vars not set)
+- **config/env.json** - Fallback environment variables.
 
-- **templates/index.html** - Responsive HTML/CSS/JS UI with HTMX integration
+- **templates/index.html** - HTMX-powered frontend. Uses `hx-indicator="#indicator"` and `hx-target="#output-content"`.
 
 ### Execution Flow
-1. User clicks a button in UI (index.html)
-2. HTMX request to `/scripts/<script>` endpoint
-3. app.py calls `ex.default_execute()` with the script command
-4. envexecute.py determines execution mode from `EXECUTE_MODEL` env var
-5. Script runs locally or remotely via SSH (Fabric), output returned as HTML
-
-### Configuration Sources (Priority Order)
-1. Environment variables (recommended for production)
-2. config/env.json (fallback for development/local testing)
-
-### Authentication Models
-- **none** (default) - No authentication
-- **oidc** - OpenID Connect via Flask-pyoidc; requires OIDC decorators on routes and additional env vars
+1. User clicks a button -> HTMX triggers `GET /scripts/<script>`.
+2. UI shows `#indicator` ("Running...").
+3. `app.py` calls `ex.default_execute()`.
+4. `envexecute.py` runs the command using `subprocess` (local) or `fabric` (remote).
+5. Output is returned as HTML (newlines replaced by `<br />`).
+6. HTMX swaps output into `#output-content`.
 
 ## Key Conventions
 
 ### Environment Variables
-Critical variables that control behavior:
-- **EXECUTE_MODEL** - Controls where/how scripts run:
-  - `local` - Run on local machine, show output
-  - `local-background` - Run locally in tmux (no output)
-  - `remote` - Run on remote server via SSH, show output
-  - `remote-background` - Run on remote server in tmux
-- **AUTH_MODEL** - Authentication method (`none` or `oidc`)
-- **LOG_FILE** (optional) - If set, logs to file; otherwise to console
+- **EXECUTE_MODEL**: `local`, `local-background`, `remote`, `remote-background`.
+- **AUTH_MODEL**: `none` or `oidc`.
+- **REMOTESERVER**, **REMOTEUSER**, **REMOTECERT**: Required for remote modes.
 
-### Remote SSH Configuration
-When using `remote` or `remote-background` modes, these vars must be set:
-- **REMOTESERVER** - Hostname/IP of target system
-- **REMOTEUSER** - SSH username
-- **REMOTECERT** - Path to private SSH key
+### Security
+- **ALWAYS** use `subprocess.run` instead of `os.popen`.
+- **ALWAYS** use `shlex.quote` when constructing shell commands that include variables (especially for background `tmux` tasks).
+- Use `check=False` for script execution to capture error output without crashing the worker.
 
-Fabric connection is initialized in envexecute.py's module-level code and stored in the `server` global variable.
+### Testing
+- Tests in `testunit.py` use `unittest.mock.patch` to isolate execution logic.
+- The `app` fixture should be created using `create_app(config_overrides)`.
 
-### OIDC Setup
-When AUTH_MODEL=oidc, add `@auth.oidc_auth('oidc-provider')` decorator to routes you want to protect. Note: Comments in app.py show where to add this.
-
-### Output Formatting
-- All script output is converted to HTML by replacing `\n` with `<br />`
-- Errors are returned as formatted HTML strings with `<br />` tags
-
-### Logging
-- Uses Python's standard logging module
-- Configured in envexecute.py at module load time
-- Logs script execution, errors, and connection issues
-
-### Error Handling
-- Try-catch blocks in both app.py and envexecute.py
-- Errors logged and returned as HTML to user
-- Critical errors (config load, remote connection) raise exceptions at startup
+### HTMX Usage
+- Target specific content areas (e.g., `#output-content`) instead of large containers to maintain UI state (like visibility of indicators).
+- Use `hx-indicator` to provide visual feedback for network-bound operations.
 
 ## File Organization
 ```
 .
-├── app.py                    # Flask routes and request handlers
-├── envexecute.py            # Script execution logic
-├── testunit.py              # Unit tests (currently minimal)
-├── requirements.txt         # Python dependencies
+├── app.py                    # Application Factory and routes
+├── envexecute.py            # Subprocess/Fabric execution logic
+├── testunit.py              # Mock-based unit tests
+├── requirements.txt         # Pinned modern dependencies
+├── .dockerignore           # Optimized build context
 ├── config/
-│   ├── commands.json        # Available scripts (user-configurable)
-│   ├── env.json             # Local env config (fallback)
-│   └── id-remote*           # SSH key pair (example)
+│   ├── commands.json        # User scripts
+│   ├── env.json             # Dev fallbacks
+│   └── id-remote*           # SSH keys
 ├── templates/
-│   └── index.html           # Frontend UI
-├── docs/
-│   ├── environment.md       # Env var documentation
-│   ├── security.md          # Security/SSH setup guide
-│   └── commands.md          # Command configuration guide
-└── Dockerfile               # Container deployment
+│   └── index.html           # HTMX + Tailwind dashboard
+└── Dockerfile               # Production-ready container
 ```
-
-## Development Notes
-
-- **Flask Debug Mode:** When FLASK_ENV is set to 'development', Flask auto-reloads on file changes
-- **SSH Keys:** Examples in config/ use key-based auth; no password auth for remote modes
-- **OIDC Integration:** Flask-pyoidc is only imported if AUTH_MODEL=oidc to keep setup optional
-- **HTML Output:** Output is HTML-safe but passed directly; sanitize if displaying user input
-- **Commands Dict:** Access via `commands[script]` in routes; missing keys raise KeyError (caught as execution error)
-- **Fabric Usage:** Fabric 3.x Connection object persists for the app lifetime; reused for all remote calls

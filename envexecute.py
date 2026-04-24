@@ -22,130 +22,133 @@ import fabric
 import os
 import json
 import logging
-
+import subprocess
+import shlex
 
 # Tries to read EXECUTE_MODEL from environment, if it doesn't succeed, it
 # populates the environment with values from config/env.json
-try:
-    if os.environ['EXECUTE_MODEL']:
-        pass
-except KeyError:
-    try:
-        with open('config/env.json') as env_file:
-            env_data = json.load(env_file)
-            for env_item in env_data:
-                os.environ[env_item] = env_data[env_item]
-    except Exception as e:
-        message=(f'Environment load error: {e}')
-        raise Exception(message)
+def load_env():
+    if not os.environ.get('EXECUTE_MODEL'):
+        try:
+            env_path = os.path.join('config', 'env.json')
+            if os.path.exists(env_path):
+                with open(env_path) as env_file:
+                    env_data = json.load(env_file)
+                    for env_item, value in env_data.items():
+                        if env_item not in os.environ:
+                            os.environ[env_item] = str(value)
+            else:
+                os.environ.setdefault('EXECUTE_MODEL', 'local')
+                os.environ.setdefault('AUTH_MODEL', 'none')
+        except Exception as e:
+            logging.error(f'Environment load error: {e}')
+            raise Exception(f'Environment load error: {e}')
 
+load_env()
 
 # Sets up logging
-try:
-    if os.environ['LOG_FILE']:
-        logging.basicConfig(filename=os.environ['LOG_FILE'],
-                            filemode='a',
-                            format='%(asctime)s - %(message)s',
-                            level=logging.INFO)
-        logging.info(f'App startup. Logging to '
-                     f'{os.environ["LOG_FILE"]} started.')
-except KeyError:
-    logging.basicConfig(format='%(asctime)s - %(message)s', level=logging.INFO)
-    logging.info(f'App startup. Logging to terminal only.')
-
+log_file = os.environ.get('LOG_FILE')
+if log_file:
+    logging.basicConfig(filename=log_file,
+                        filemode='a',
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        level=logging.INFO)
+    logging.info(f'App startup. Logging to {log_file} started.')
+else:
+    logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
+    logging.info('App startup. Logging to terminal only.')
 
 # remote ssh server setup, if the appropriate EXECUTE_MODEL is set
-if (os.environ['EXECUTE_MODEL'] == 'remote'
-        or os.environ['EXECUTE_MODEL'] == 'remote-background'):
-    try:
-        server = fabric.Connection(os.environ['REMOTESERVER'], port=22,
-                                   user=os.environ['REMOTEUSER'],
-                                   connect_kwargs={"key_filename":
-                                                   os.environ['REMOTECERT']})
-        logging.debug('Remote server connection step successful.')
-    except Exception as e:
-        message=(f"Remote connection to "
-                f"{os.environ['REMOTESERVER']} failed: {e}")
-        logging.critical(message)
-        raise Exception(message)
+_server_connection = None
 
+def get_server_connection():
+    global _server_connection
+    execute_model = os.environ.get('EXECUTE_MODEL', 'local')
+    if execute_model.startswith('remote') and _server_connection is None:
+        try:
+            _server_connection = fabric.Connection(
+                os.environ['REMOTESERVER'],
+                port=22,
+                user=os.environ['REMOTEUSER'],
+                connect_kwargs={"key_filename": os.environ['REMOTECERT']}
+            )
+            logging.info('Remote server connection established.')
+        except Exception as e:
+            message = f"Remote connection to {os.environ.get('REMOTESERVER')} failed: {e}"
+            logging.critical(message)
+            raise Exception(message)
+    return _server_connection
 
 def local_execute(script):
     ''' Function that executes the argument on a local system, and returns
      its output in html form '''
     try:
-        execute = os.popen(script)
-        output = execute.read()
-        logging.debug(output)
+        # Use subprocess for better security and control
+        result = subprocess.run(script, shell=True, capture_output=True, text=True, check=False)
+        output = result.stdout + result.stderr
+        logging.debug(f"Local execution output: {output}")
         # reformatting newlines to html <br /> tag for html output
-        output = output.replace('\n', '<br />')
-        return output
+        return output.replace('\n', '<br />')
     except Exception as e:
         exec_err = f"Error in running script {script}: {e}"
         logging.error(exec_err)
-        exec_err = f'{exec_err} <br />'
-        return exec_err
-
+        return f'{exec_err} <br />'
 
 def local_execute_background(script):
     ''' Function that executes the argument on a local system in background
       using tmux '''
     try:
-        script_2 = f"tmux new -d '{script}'"
-        os.system(script_2)
+        # Avoid shell injection by using shlex to quote the script
+        quoted_script = shlex.quote(script)
+        cmd = f"tmux new -d {quoted_script}"
+        subprocess.run(cmd, shell=True, check=True)
         return "Script executed in background. <br />"
     except Exception as e:
         exec_err = f"Error in running script {script}: {e}"
         logging.error(exec_err)
-        exec_err = f'{exec_err} <br />'
-        return exec_err
-
+        return f'{exec_err} <br />'
 
 def remote_execute(script):
     ''' Function that executes the argument on a remote system, and returns
       its output in html form '''
     try:
-        execute = server.run(script)
-        output = execute.stdout
-        logging.debug(output)
-        # reformatting newlines to html <br /> tag for html output
-        output = output.replace('\n', '<br />')
-        return output
+        conn = get_server_connection()
+        result = conn.run(script, hide=True)
+        output = result.stdout + result.stderr
+        logging.debug(f"Remote execution output: {output}")
+        return output.replace('\n', '<br />')
     except Exception as e:
         exec_err = f"Error in running script {script}: {e}"
         logging.error(exec_err)
-        exec_err = f'{exec_err} <br />'
-        return exec_err
-
+        return f'{exec_err} <br />'
 
 def remote_execute_background(script):
     ''' Function that executes the argument on a remote system in background
       using tmux '''
     try:
-        script_2 = f"tmux new -d '{script}'"
-        server.run(script_2)
+        conn = get_server_connection()
+        quoted_script = shlex.quote(script)
+        conn.run(f"tmux new -d {quoted_script}", hide=True)
         return "Script executed in background. <br />"
     except Exception as e:
         exec_err = f"Error in running script {script}: {e}"
         logging.error(exec_err)
-        exec_err = f'{exec_err} <br />'
-        return exec_err
-
+        return f'{exec_err} <br />'
 
 def default_execute(script):
     ''' Function that will call the appropriate function according to the
       EXECUTE_MODEL env variable '''
-    logging.debug(f'Running {script} in {os.environ["EXECUTE_MODEL"]} mode...')
-    if os.environ['EXECUTE_MODEL'] == 'local':
+    model = os.environ.get('EXECUTE_MODEL', 'local')
+    logging.info(f'Running script in {model} mode...')
+    
+    if model == 'local':
         return local_execute(script)
-    elif os.environ['EXECUTE_MODEL'] == 'local-background':
+    elif model == 'local-background':
         return local_execute_background(script)
-    elif os.environ['EXECUTE_MODEL'] == 'remote':
+    elif model == 'remote':
         return remote_execute(script)
-    elif os.environ['EXECUTE_MODEL'] == 'remote-background':
+    elif model == 'remote-background':
         return remote_execute_background(script)
     else:
-        # Fallback mode
-        logging.warning(f'Unknown EXECUTE_MODEL {os.environ["EXECUTE_MODEL"]},'
-                      f' attempting to run {script} in local mode...')
+        logging.warning(f'Unknown EXECUTE_MODEL {model}, falling back to local.')
         return local_execute(script)
